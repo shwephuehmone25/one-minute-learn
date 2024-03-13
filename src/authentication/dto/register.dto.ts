@@ -1,19 +1,10 @@
-import {
-  IsEmail,
-  IsString,
-  IsNotEmpty,
-  MinLength,
-  Matches,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
+import { Match } from '../../utils/match.decorator';
 import { ApiProperty } from '@nestjs/swagger';
-
 export class RegisterDto {
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  name: string;
+  // @IsString()
+  // @IsNotEmpty()
+  // name: string;
 
   @ApiProperty({
     deprecated: true,
@@ -21,19 +12,18 @@ export class RegisterDto {
   })
   fullName: string;
 
-  @IsString()
   @IsNotEmpty()
-  @MinLength(7)
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Length(8)
   password: string;
 
-  @ApiProperty({
-    description: 'Has to match a regular expression: /^\\+[1-9]\\d{1,14}$/',
-    example: '+123123123123',
-  })
-  @IsString()
   @IsNotEmpty()
-  @Matches(/^\+[1-9]\d{1,14}$/)
-  phoneNumber: string;
+  @IsString()
+  @Length(8)
+  @Match('password')
+  passwordConfirm: string;
 }
-
-export default RegisterDto;

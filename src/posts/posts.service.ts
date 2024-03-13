@@ -6,7 +6,7 @@ import { UpdatePostDto } from './dto/updatePost.dto';
 import PostEntity from './post.entity'; 
 
 @Injectable()
-export default class PostsService {
+export default class PostService {
   constructor(
     @InjectRepository(PostEntity)
     private postsRepository: Repository<PostEntity>,

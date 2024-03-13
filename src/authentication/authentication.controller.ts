@@ -1,44 +1,25 @@
-import {
-  Body,
-  Req,
-  Res,
-  Controller,
-  HttpCode,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { Response } from 'express';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
-import RegisterDto from './dto/register.dto';
-import RequestWithUser from './requestWithUser.interface';
-import { LocalAuthenticationGuard } from './localAuthentication.guard';
-import JwtAuthenticationGuard from './jwt-authentication.guard';
+import { LogInDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RegisterDto } from './dto/register.dto';
 
-@Controller('authentication')
+@Controller('auth')
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(private authenticationService: AuthenticationService) {}
 
-  @Post('register')
-  async register(@Body() registrationData: RegisterDto) {
-    return this.authenticationService.register(registrationData);
+  @Post('/register')
+  async register(@Body() registerDto: RegisterDto) {
+    return await this.authenticationService.createUser(registerDto);
   }
 
-  @HttpCode(200)
-  @UseGuards(LocalAuthenticationGuard)
-  @Post('log-in')
-  async logIn(@Req() request: RequestWithUser) {
-    const user = request.user;
-    user.password = undefined;
-    return user;
+  @Post('/login')
+  async login(@Body() loginDto: LogInDto) {
+    return await this.authenticationService.login(loginDto);
   }
 
-  @UseGuards(JwtAuthenticationGuard)
-  @Post('log-out')
-  async logOut(@Req() request: Request, @Res() response: Response) {
-    response.setHeader(
-      'Set-Cookie',
-      this.authenticationService.getCookieForLogOut(),
-    );
-    response.sendStatus(200);
+  @Post('/refresh-token')
+  async refreshToken(@Body() { refreshToken }: RefreshTokenDto) {
+    return await this.authenticationService.refreshTokens(refreshToken);
   }
 }

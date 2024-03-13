@@ -1,94 +1,109 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { LogInDto } from './dto/logIn.dto';
+import { RegisterDto } from './dto/register.dto';
+import { User, UserRole } from '../users/user.entity';
+import { hash, compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../users/users.service';
-import RegisterDto from '../authentication/dto/register.dto';
-import { HttpException, HttpStatus } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
-import { PostgresErrorCode } from '../database/postgresErrorCodes.enum';
-import { TokenPayload } from './tokenPayload.interface';
+
+export interface JWTTokens {
+  accessToken: string;
+  refreshToken: string;
+}
 
 @Injectable()
 export class AuthenticationService {
   constructor(
-    private readonly usersService: UsersService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    @InjectRepository(User) private userRepository: Repository<User>,
+    private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
-  //register
-  public async register(registrationData: RegisterDto) {
-    const hashedPassword = await bcrypt.hash(registrationData.password, 10);
+  async createUser(registerDto: RegisterDto) {
+    const existingUser = await this.userRepository.findOne({
+      where: { email: registerDto.email },
+    });
+    if (existingUser) {
+      throw new HttpException('Email already registered!', 400);
+    }
+
+    const protectedPassword = await this.hashPassword(registerDto.password);
+
+    await this.userRepository.save({
+      email: registerDto.email,
+      password: protectedPassword,
+      role: UserRole.USER,
+    });
+  }
+
+  async login(loginDto: LogInDto): Promise<JWTTokens> {
+    const { email, password } = loginDto;
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      throw new HttpException('Invalid credentials', 400);
+    }
+
+    const validPassword = await compare(password, user.password);
+
+    if (!validPassword) {
+      throw new HttpException('Invalid credentials', 400);
+    }
+
+    return this.getTokens(user);
+  }
+
+  async refreshTokens(token: string): Promise<JWTTokens> {
     try {
-      const createdUser = await this.usersService.create({
-        ...registrationData,
-        password: hashedPassword,
+      const { sub: email } = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
       });
-      createdUser.password = undefined;
-      return createdUser;
-    } catch (error) {
-      if (error?.code === PostgresErrorCode.UniqueViolation) {
-        throw new HttpException(
-          'User with that email already exists',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      throw new HttpException(
-        'Something went wrong',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      const user = await this.userRepository.findOneOrFail({
+        where: { email },
+      });
+      return this.getTokens(user);
+    } catch (err) {
+      throw new HttpException('Invalid credentials', 400);
     }
   }
 
-  //login user
-  public async getAuthenticatedUser(email: string, hashedPassword: string) {
-    try {
-      const user = await this.usersService.getByEmail(email);
-      const isPasswordMatching = await bcrypt.compare(
-        hashedPassword,
-        user.password,
-      );
-      if (!isPasswordMatching) {
-        throw new HttpException(
-          'Wrong credentials provided',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      user.password = undefined;
-      return user;
-    } catch (error) {
-      throw new HttpException(
-        'Wrong credentials provided',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+  private hashPassword(password: string): Promise<string> {
+    return hash(password, 10);
   }
 
-  public getCookieWithJwtToken(email: string) {
-    const payload: TokenPayload = { email };
-    const token = this.jwtService.sign(payload);
-    return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get('JWT_EXPIRATION_TIME')}`;
-  }
+  private async getTokens(user: User): Promise<JWTTokens> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          sub: user.email,
+          role: user.role,
+        },
+        {
+          secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
+          expiresIn: this.configService.get<string>(
+            'JWT_ACCESS_TOKEN_EXPIRATION',
+          ),
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          sub: user.email,
+          role: user.role,
+        },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+          expiresIn: this.configService.get<string>(
+            'JWT_REFRESH_TOKEN_EXPIRATION',
+          ),
+        },
+      ),
+    ]);
 
-  //verify pw
-  private async verifyPassword(
-    plainTextPassword: string,
-    hashedPassword: string,
-  ) {
-    const isPasswordMatching = await bcrypt.compare(
-      plainTextPassword,
-      hashedPassword,
-    );
-    if (!isPasswordMatching) {
-      throw new HttpException(
-        'Wrong credentials provided',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  //logout
-  public getCookieForLogOut() {
-    return `Authentication=; HttpOnly; Path=/; Max-Age=0`;
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
 }

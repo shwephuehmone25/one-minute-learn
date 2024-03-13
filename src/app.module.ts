@@ -1,25 +1,31 @@
 import { Module } from '@nestjs/common';
-import { PostsModule } from './posts/posts.module';
-import { ConfigModule } from '@nestjs/config';
-import * as Joi from 'joi';
-import { DatabaseModule } from './database/database.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { validate } from './config/env.validation';
+import { PostModule } from './posts/posts.module';
+import { AuthModule } from './authentication/authentication.module';
+import { User } from './users/user.entity';
+import { Post } from './posts/post.entity';
 
 @Module({
   imports: [
-    PostsModule,
-    ConfigModule.forRoot({
-      validationSchema: Joi.object({
-        POSTGRES_HOST: Joi.string().required(),
-        POSTGRES_PORT: Joi.number().required(),
-        POSTGRES_USER: Joi.string().required(),
-        POSTGRES_PASSWORD: Joi.string().required(),
-        POSTGRES_DB: Joi.string().required(),
-        PORT: Joi.number(),
-        JWT_SECRET: Joi.string().required(),
-        JWT_EXPIRATION_TIME: Joi.string().required(),
+    ConfigModule.forRoot({ isGlobal: true, validate }),
+    PostModule,
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('POSTGRES_HOST'),
+        port: configService.get<number>('POSTGRES_PORT'),
+        username: configService.get<string>('POSTGRES_USER'),
+        password: configService.get<string>('POSTGRES_PASSWORD'),
+        database: configService.get<string>('POSTGRES_DB'),
+        entities: [Post, User],
+        synchronize: false,
+        logging: configService.get<boolean>('DB_LOGGING'),
       }),
     }),
-    DatabaseModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
