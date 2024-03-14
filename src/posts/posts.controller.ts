@@ -12,6 +12,9 @@ import PostService from './posts.service';
 import { CreatePostDto } from './dto/createPost.dto';
 import { UpdatePostDto } from './dto/updatePost.dto';
 import JwtAuthenticationGuard from '../authentication/guard/access-token.guard';
+import { RolesGuard } from '../authentication/guard/role.guard'; 
+import { Roles } from '../authentication/decorators/role.decorator';
+import { Role } from 'src/authentication/enum/role.enum';
 
 @Controller('posts')
 export default class PostController {
@@ -28,7 +31,8 @@ export default class PostController {
   }
 
   @Post()
-  @UseGuards(JwtAuthenticationGuard)
+  @UseGuards(JwtAuthenticationGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   async createPost(@Body() post: CreatePostDto) {
     return this.postsService.createPost(post);
   }

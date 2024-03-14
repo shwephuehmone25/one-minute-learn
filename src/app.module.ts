@@ -6,6 +6,8 @@ import { PostModule } from './posts/posts.module';
 import { AuthModule } from './authentication/authentication.module';
 import { User } from './users/user.entity';
 import { Post } from './posts/post.entity';
+import { CategoryController } from './category/category.controller';
+import { CategoryService } from './category/category.service';
 
 @Module({
   imports: [
@@ -27,7 +29,7 @@ import { Post } from './posts/post.entity';
     }),
     AuthModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [CategoryController],
+  providers: [CategoryService],
 })
 export class AppModule {}
