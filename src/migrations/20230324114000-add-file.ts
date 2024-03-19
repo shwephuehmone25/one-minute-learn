@@ -1,28 +1,25 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class initialSchema1665490266140 implements MigrationInterface {
+export class addFileTable20230324114000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'posts',
+        name: 'files',
         columns: [
           {
             name: 'id',
-            type: 'uuid',
+            type: 'int',
             isPrimary: true,
             isGenerated: true,
-            generationStrategy: 'uuid',
-            isNullable: false,
+            generationStrategy: 'increment',
           },
           {
-            name: 'title',
+            name: 'url',
             type: 'varchar',
-            isNullable: false,
           },
           {
-            name: 'content',
+            name: 'key',
             type: 'varchar',
-            isNullable: false,
           },
         ],
       }),
@@ -30,6 +27,6 @@ export class initialSchema1665490266140 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('posts');
+    await queryRunner.dropTable('files');
   }
 }

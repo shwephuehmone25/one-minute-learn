@@ -1,41 +1,44 @@
-import { UserRole } from '../users/user.entity';
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class addUser1666430321163 implements MigrationInterface {
+export class addPostTable20230324102000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'users',
+        name: 'posts',
         columns: [
           {
             name: 'id',
             type: 'int',
             isPrimary: true,
             isGenerated: true,
-            generationStrategy: 'increment', 
+            generationStrategy: 'increment',
             isNullable: false,
           },
-          // {
-          //   name: 'name',
-          //   type: 'varchar',
-          //   isNullable: false,
-          // },
           {
-            name: 'email',
+            name: 'title',
             type: 'varchar',
             isNullable: false,
           },
           {
-            name: 'password',
+            name: 'content',
             type: 'varchar',
             isNullable: false,
           },
           {
-            name: 'userRole',
-            type: 'varchar',
-            isNullable: false,
-            enum: [...Object.values(UserRole)],
-            default: UserRole.USER,
+            name: 'created_at',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
+          {
+            name: 'updated_at',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+            onUpdate: 'CURRENT_TIMESTAMP'
+          },
+          {
+            name: 'deleted_at',
+            type: 'timestamp',
+            isNullable: true,
           },
         ],
       }),
@@ -43,6 +46,6 @@ export class addUser1666430321163 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('users');
+    await queryRunner.dropTable('posts');
   }
 }

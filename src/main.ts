@@ -8,6 +8,11 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   const configService = app.get(ConfigService);
   const port = configService.get<string>('APP_PORT');
+  // config.update({
+  //   accessKeyId: configService.get('AWS_ACCESS_KEY_ID'),
+  //   secretAccessKey: configService.get('AWS_SECRET_ACCESS_KEY'),
+  //   region: configService.get('AWS_REGION'),
+  // });
   await app.listen(port);
 }
 

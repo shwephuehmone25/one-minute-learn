@@ -1,29 +1,17 @@
-import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
-import { Match } from '../../utils/match.decorator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsString, IsNotEmpty, MinLength } from 'class-validator';
+
 export class RegisterDto {
-  // @IsString()
-  // @IsNotEmpty()
-  // name: string;
-
-  @ApiProperty({
-    deprecated: true,
-    description: 'Use the name property instead',
-  })
-  fullName: string;
-
-  @IsNotEmpty()
   @IsEmail()
   email: string;
 
-  @IsNotEmpty()
   @IsString()
-  @Length(8)
-  password: string;
+  @IsNotEmpty()
+  name: string;
 
-  @IsNotEmpty()
   @IsString()
-  @Length(8)
-  @Match('password')
-  passwordConfirm: string;
+  @IsNotEmpty()
+  @MinLength(7)
+  password: string;
 }
+
+export default RegisterDto;

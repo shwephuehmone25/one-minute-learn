@@ -26,7 +26,18 @@ export class addCategoryTable20230324103000 implements MigrationInterface {
             isNullable: false,
           },
           {
-            name: 'deletedAt',
+            name: 'updated_at',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+            onUpdate: 'CURRENT_TIMESTAMP'
+          },
+          {
+            name: 'created_at',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
+          {
+            name: 'deleted_at',
             type: 'timestamp',
             isNullable: true,
           },
