@@ -11,6 +11,8 @@ import { CategoriesModule } from './category/category.module';
 import { UsersModule } from './users/users.module';
 import Category from './category/category.entity';
 import PublicFile from './files/publicFile.entity';
+import { Video } from './videos/video.entity';
+import { VideosModule } from './videos/videos.module';
 
 @Module({
   imports: [
@@ -32,14 +34,16 @@ import PublicFile from './files/publicFile.entity';
         username: configService.get<string>('POSTGRES_USER'),
         password: configService.get<string>('POSTGRES_PASSWORD'),
         database: configService.get<string>('POSTGRES_DB'),
-        entities: [PostEntity, User, Category, PublicFile],
+        filedestination: configService.get<string>('UPLOADED_FILES_DESTINATION'),
+        entities: [PostEntity, User, Category, PublicFile, Video],
         synchronize: true,
         logging: configService.get<boolean>('DB_LOGGING'),
       }),
     }),
     AuthModule,
     CategoriesModule,
-    UsersModule
+    UsersModule,
+    VideosModule
   ],
 })
 export class AppModule {}
